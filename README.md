@@ -11,3 +11,5 @@ The app should simply display:
 Trip speed and distance would be nice as well.
 
 The app should maintain a connection to the btle peripheral reliably.
+
+There is a swift version for OSX and iOS for comparison purposes at https://github.com/deadfalkon/swift-simple-bike-computer.
