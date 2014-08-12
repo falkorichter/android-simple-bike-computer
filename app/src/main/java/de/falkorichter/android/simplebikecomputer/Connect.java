@@ -8,11 +8,15 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothManager;
+import android.content.Context;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TextView;
 
 import java.util.UUID;
@@ -27,7 +31,7 @@ public class Connect extends Activity {
 
     private static final UUID CSC_SERVICE_UUID = UUID.fromString("00001816-0000-1000-8000-00805f9b34fb");
     private static final UUID CSC_CHARACTERISTIC_UUID = UUID.fromString("00002a5b-0000-1000-8000-00805f9b34fb");
-    private static final UUID CSC_CHARACTERISTIC_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+    private static final UUID BTLE_NOTIFICATION_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
     private static final String TAG = Connect.class.getSimpleName();
 
@@ -69,7 +73,7 @@ public class Connect extends Activity {
             boolean notificationSet = gatt.setCharacteristicNotification(valueCharacteristic, true);
             Log.d(TAG, "registered for updates " + (notificationSet ? "successfully" : "unsuccessfully") );
 
-            BluetoothGattDescriptor descriptor = valueCharacteristic.getDescriptor(CSC_CHARACTERISTIC_DESCRIPTOR_UUID);
+            BluetoothGattDescriptor descriptor = valueCharacteristic.getDescriptor(BTLE_NOTIFICATION_DESCRIPTOR_UUID);
             descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
             boolean writeDescriptorSuccess = gatt.writeDescriptor(descriptor);
             Log.d(TAG, "wrote Descriptor for updates " + (writeDescriptorSuccess ? "successfully" : "unsuccessfully") );
@@ -115,9 +119,16 @@ public class Connect extends Activity {
     @InjectView(R.id.rssiTextView)
     TextView rssiTextView;
 
+    @InjectView(R.id.auto_connect_checkbox)
+    CheckBox autoConnectCheckBox;
+
+    @InjectView(R.id.keep_awake_button)
+    Button keepAwakeButton;
+
     private boolean connectingToGatt;
 
     private final Object connectingToGattMonitor = new Object();
+    private PowerManager.WakeLock wakeLock;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -143,7 +154,7 @@ public class Connect extends Activity {
                     if (/*device.getName().contains("BSCBLE V1.5") && */!connectingToGatt) {
                         connectingToGatt = true;
                         Log.d(TAG, "connecting to " + device.getAddress());
-                        device.connectGatt(Connect.this, false, bluetoothGattCallback);
+                        device.connectGatt(Connect.this, autoConnectCheckBox.isChecked(), bluetoothGattCallback);
 
                         runOnUiThread(new Runnable() {
                             @Override
@@ -168,6 +179,22 @@ public class Connect extends Activity {
         setConnectedGatt(null);
     }
 
+    @OnClick(R.id.keep_awake_button)
+    protected void keepAwakeButtonTapped(){
+        if(this.wakeLock == null){
+            final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            this.wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "My Tag");
+            this.wakeLock.acquire();
+            keepAwakeButton.setText("Save Battery");
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }else{
+            this.wakeLock.release();
+            this.wakeLock = null;
+            keepAwakeButton.setText("Stay Awake");
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
+
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

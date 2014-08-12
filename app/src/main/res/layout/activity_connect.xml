@@ -16,11 +16,18 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true"
         android:layout_alignParentEnd="true" />
+    <CheckBox
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Auto Connect"
+        android:id="@+id/auto_connect_checkbox"
+        android:layout_below="@+id/connect_button"
+        android:layout_centerHorizontal="true" />
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:id="@+id/textViews"
-        android:layout_below="@+id/connect_button"
+        android:layout_below="@+id/auto_connect_checkbox"
         android:layout_alignParentStart="true"
         android:layout_alignEnd="@+id/connect_button">
         <TextView
@@ -58,7 +65,14 @@
         android:layout_alignParentStart="true"
         android:layout_alignEnd="@+id/disconnect_button" />
 
-
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Keep Awake"
+        android:id="@+id/keep_awake_button"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignEnd="@+id/distance_label" />
 
 
 </RelativeLayout>
