@@ -125,14 +125,12 @@ public class Connect extends Activity {
     protected void connectButtonTapped() {
         final BluetoothAdapter adapter = bluetooth.getAdapter();
         UUID[] serviceUUIDs = new UUID[]{CSC_SERVICE_UUID};
-        adapter.startLeScan(new BluetoothAdapter.LeScanCallback() {
-
-
+        adapter.startLeScan(serviceUUIDs, new BluetoothAdapter.LeScanCallback() {
             @Override
             public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
                 Log.d(TAG, "found device " + device.getAddress());
                 synchronized (connectingToGattMonitor){
-                    if (device.getName().contains("BSCBLE V1.5") && !connectingToGatt) {
+                    if (/*device.getName().contains("BSCBLE V1.5") && */!connectingToGatt) {
                         connectingToGatt = true;
                         Log.d(TAG, "connecting to " + device.getAddress());
                         device.connectGatt(Connect.this, false, bluetoothGattCallback);
