@@ -25,6 +25,8 @@ import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
 import de.falkorichter.android.simplebikecomputer.utils.BluetoothUtil;
+import de.keyboardsurfer.android.widget.crouton.Crouton;
+import de.keyboardsurfer.android.widget.crouton.Style;
 
 
 public class Connect extends Activity {
@@ -47,11 +49,13 @@ public class Connect extends Activity {
 
             switch (state) {
                 case BluetoothGatt.STATE_CONNECTED: {
+                    showText("STATE_CONNECTED", Style.INFO);
                     setConnectedGatt(gatt);
                     gatt.discoverServices();
                     break;
                 }
                 case BluetoothGatt.STATE_DISCONNECTED:
+                    showText("STATE_DISCONNECTED", Style.ALERT);
                 case BluetoothGatt.GATT_FAILURE: {
                     setConnectedGatt(null);
                     break;
@@ -102,6 +106,16 @@ public class Connect extends Activity {
         }
 
     };
+
+    private void showText(final String text, final Style style) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Crouton.showText(Connect.this, text, style);
+            }
+        });
+    }
+
     private BluetoothGatt connectedGatt;
 
     @InjectView(R.id.disconnect_button)
