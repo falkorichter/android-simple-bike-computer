@@ -27,10 +27,7 @@ public class Connect extends Activity {
 
     private static final UUID CSC_SERVICE_UUID = UUID.fromString("00001816-0000-1000-8000-00805f9b34fb");
     private static final UUID CSC_CHARACTERISTIC_UUID = UUID.fromString("00002a5b-0000-1000-8000-00805f9b34fb");
-
     private static final UUID CSC_CHARACTERISTIC_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
-
-
 
     private static final String TAG = Connect.class.getSimpleName();
 
@@ -38,8 +35,12 @@ public class Connect extends Activity {
     private BluetoothGattCallback bluetoothGattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int state) {
+            connectingToGatt = false;
             super.onConnectionStateChange(gatt, status, state);
             Log.d(TAG, "onConnectionStateChange gatt:" + BluetoothUtil.gattToString(gatt) + " status:" + BluetoothUtil.statusToString(status) + " state:" + BluetoothUtil.connectionStateToString(state));
+
+            updateConnectionStateDisplay(state);
+
             switch (state) {
                 case BluetoothGatt.STATE_CONNECTED: {
                     setConnectedGatt(gatt);
@@ -94,12 +95,17 @@ public class Connect extends Activity {
 
     @InjectView(R.id.disconnect_button)
     Button disconnectButton;
+
     @InjectView(R.id.connect_button)
     Button connectButton;
-    private boolean connectingToGatt;
 
     @InjectView(R.id.distance_label)
     TextView distanceLabel;
+
+    @InjectView(R.id.connection_state_textView)
+    TextView connectionStateTextView;
+
+    private boolean connectingToGatt;
 
     private final Object connectingToGattMonitor = new Object();
 
@@ -180,6 +186,16 @@ public class Connect extends Activity {
             public void run() {
                 disconnectButton.setEnabled(connectedGatt != null);
                 connectButton.setEnabled(connectedGatt == null);
+            }
+        });
+    }
+
+    void updateConnectionStateDisplay(int status){
+        final String text = BluetoothUtil.connectionStateToString(status);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                connectionStateTextView.setText(text);
             }
         });
     }
