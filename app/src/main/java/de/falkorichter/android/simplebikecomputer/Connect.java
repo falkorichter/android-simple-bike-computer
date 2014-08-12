@@ -19,6 +19,8 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
+import org.w3c.dom.Text;
+
 import java.util.UUID;
 
 import butterknife.ButterKnife;
@@ -36,6 +38,7 @@ public class Connect extends Activity {
     private static final UUID BTLE_NOTIFICATION_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
     private static final String TAG = Connect.class.getSimpleName();
+    public static final int NOT_SET = Integer.MIN_VALUE;
 
     private BluetoothManager bluetooth;
     private BluetoothGattCallback bluetoothGattCallback = new BluetoothGattCallback() {
@@ -83,6 +86,10 @@ public class Connect extends Activity {
             Log.d(TAG, "wrote Descriptor for updates " + (writeDescriptorSuccess ? "successfully" : "unsuccessfully") );
         }
 
+        double lastWheelTime = NOT_SET;
+        long lastWheelCount = NOT_SET;
+        double wheelSize = 2.17;
+
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicChanged(gatt, characteristic);
@@ -93,25 +100,63 @@ public class Connect extends Activity {
             final int cumulativeCrankRevolutions        = (value[7] & 0xff) | ((value[8] & 0xff) << 8);
             final int lastCrankEventReadValue           = (value[9] & 0xff) | ((value[10] & 0xff) << 8);
 
+            double lastWheelEventTime = lastWheelEventReadValue / 1024.0;
+
             Log.d(TAG, "onCharacteristicChanged " + cumulativeWheelRevolutions + ":" + lastWheelEventReadValue + ":" + cumulativeCrankRevolutions + ":" + lastCrankEventReadValue);
 
-            gatt.readRemoteRssi();
+            if (lastWheelTime == NOT_SET){
+                lastWheelTime = lastWheelEventTime;
+            }
+            if (lastWheelCount == NOT_SET){
+                lastWheelCount = cumulativeWheelRevolutions;
+            }
 
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    distanceLabel.setText( String.format( "Distance: %.2f", cumulativeWheelRevolutions * 2.17 ));
+                    distanceLabel.setText( String.format( "Distance: %.2f", cumulativeWheelRevolutions * wheelSize));
                 }
             });
-        }
 
+            long numberOfWheelRevolutions = cumulativeWheelRevolutions - lastWheelCount;
+
+            if (lastWheelTime  != lastWheelEventTime && numberOfWheelRevolutions > 0){
+                double timeDiff = lastWheelEventTime - lastWheelTime;
+
+                double speedinMetersPerSeconds = (wheelSize * numberOfWheelRevolutions) / timeDiff;
+                double speedInKilometersPerHour = speedinMetersPerSeconds * 3.6;
+
+                showSpeed((int) speedInKilometersPerHour);
+                Log.d(TAG, "speed:" + speedInKilometersPerHour);
+
+                lastWheelCount = cumulativeWheelRevolutions;
+                lastWheelTime = lastWheelEventTime;
+            }
+
+            gatt.readRemoteRssi();
+        }
     };
+    private Crouton currentCrouton;
+
+    private void showSpeed(final int speedInKilometersPerHour) {
+        final String text = getString(R.string.speed, speedInKilometersPerHour);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                speedTextView.setText(text);
+            }
+        });
+    }
 
     private void showText(final String text, final Style style) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Crouton.showText(Connect.this, text, style);
+                if(currentCrouton != null){
+                    currentCrouton.cancel();
+                }
+                currentCrouton = Crouton.makeText(Connect.this, text, style);
+                currentCrouton.show();
             }
         });
     }
@@ -138,6 +183,9 @@ public class Connect extends Activity {
 
     @InjectView(R.id.keep_awake_button)
     Button keepAwakeButton;
+
+    @InjectView(R.id.speed_TextView)
+    TextView speedTextView;
 
     private boolean connectingToGatt;
 
