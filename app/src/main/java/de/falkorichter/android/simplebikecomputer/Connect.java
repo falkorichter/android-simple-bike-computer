@@ -75,10 +75,10 @@ public class Connect extends Activity {
             super.onCharacteristicChanged(gatt, characteristic);
             byte[] value = characteristic.getValue();
 
-            final long cumulativeWheelRevolutions     = (value[1] & 0xff) | ((value[2] & 0xff) << 8) | ((value[3] & 0xff) << 16) | ((value[4] & 0xff) << 24);
-            int lastWheelEventReadValue         = (value[5] & 0xff) | ((value[6] & 0xff) << 8);
-            final int cumulativeCrankRevolutions      = (value[7] & 0xff) | ((value[8] & 0xff) << 8);
-            int lastCrankEventReadValue         = (value[9] & 0xff) | ((value[10] & 0xff) << 8);
+            final long cumulativeWheelRevolutions       = (value[1] & 0xff) | ((value[2] & 0xff) << 8) | ((value[3] & 0xff) << 16) | ((value[4] & 0xff) << 24);
+            final int lastWheelEventReadValue           = (value[5] & 0xff) | ((value[6] & 0xff) << 8);
+            final int cumulativeCrankRevolutions        = (value[7] & 0xff) | ((value[8] & 0xff) << 8);
+            final int lastCrankEventReadValue           = (value[9] & 0xff) | ((value[10] & 0xff) << 8);
 
             Log.d(TAG, "onCharacteristicChanged " + cumulativeWheelRevolutions + ":" + lastWheelEventReadValue + ":" + cumulativeCrankRevolutions + ":" + lastCrankEventReadValue);
 
