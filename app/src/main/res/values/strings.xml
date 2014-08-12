@@ -4,5 +4,6 @@
     <string name="app_name">Simple Bike Computer</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="rssi_format">%d db</string>
 
 </resources>

@@ -53,7 +53,12 @@ public class Connect extends Activity {
                     break;
                 }
             }
+        }
 
+        @Override
+        public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
+            super.onReadRemoteRssi(gatt, rssi, status);
+            updateRssiDisplay(rssi);
         }
 
         @Override
@@ -82,6 +87,8 @@ public class Connect extends Activity {
 
             Log.d(TAG, "onCharacteristicChanged " + cumulativeWheelRevolutions + ":" + lastWheelEventReadValue + ":" + cumulativeCrankRevolutions + ":" + lastCrankEventReadValue);
 
+            gatt.readRemoteRssi();
+
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -104,6 +111,9 @@ public class Connect extends Activity {
 
     @InjectView(R.id.connection_state_textView)
     TextView connectionStateTextView;
+
+    @InjectView(R.id.rssiTextView)
+    TextView rssiTextView;
 
     private boolean connectingToGatt;
 
@@ -141,6 +151,7 @@ public class Connect extends Activity {
                                 connectButton.setEnabled(false);
                             }
                         });
+                        updateRssiDisplay(rssi);
 
                         adapter.stopLeScan(this);
                     }
@@ -194,6 +205,15 @@ public class Connect extends Activity {
             @Override
             public void run() {
                 connectionStateTextView.setText(text);
+            }
+        });
+    }
+
+    void updateRssiDisplay(final int rssi){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                rssiTextView.setText(Connect.this.getString(R.string.rssi_format, rssi));
             }
         });
     }

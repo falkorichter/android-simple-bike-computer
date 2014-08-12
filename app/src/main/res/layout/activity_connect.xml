@@ -16,22 +16,35 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true"
         android:layout_alignParentEnd="true" />
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:textAlignment="center"
-        android:text="Disconnected"
-        android:id="@+id/connection_state_textView"
+        android:id="@+id/textViews"
         android:layout_below="@+id/connect_button"
         android:layout_alignParentStart="true"
-        android:layout_alignEnd="@+id/connect_button" />
+        android:layout_alignEnd="@+id/connect_button">
+        <TextView
+            android:layout_width="1dip"
+            android:layout_weight="3"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textAlignment="center"
+            android:text="Disconnected"
+            android:id="@+id/connection_state_textView"/>
+        <TextView
+            android:layout_weight="1"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:id="@+id/rssiTextView"
+            android:text="  db"/>
+        </LinearLayout>
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Disconnect"
         android:id="@+id/disconnect_button"
-        android:layout_below="@+id/connection_state_textView"
+        android:layout_below="@+id/textViews"
         android:layout_alignParentStart="true"
         android:layout_alignEnd="@+id/connect_button" />
     <TextView
