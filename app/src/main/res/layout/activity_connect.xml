@@ -9,19 +9,25 @@
     tools:context=".Connect">
 
     <Button
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="Scan"
         android:id="@+id/connect_button"
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true"
         android:layout_alignParentEnd="true" />
+    <Button
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Connect to heart rate"
+        android:id="@+id/connect_heartrate_button"
+        android:layout_below="@+id/connect_button"/>
     <CheckBox
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="Auto Connect"
         android:id="@+id/auto_connect_checkbox"
-        android:layout_below="@+id/connect_button"
+        android:layout_below="@+id/connect_heartrate_button"
         android:layout_centerHorizontal="true" />
     <LinearLayout
         android:layout_width="fill_parent"

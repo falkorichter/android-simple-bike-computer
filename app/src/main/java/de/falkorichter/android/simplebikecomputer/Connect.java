@@ -19,8 +19,6 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
 import java.util.UUID;
 
 import butterknife.ButterKnife;
@@ -31,7 +29,7 @@ import de.keyboardsurfer.android.widget.crouton.Crouton;
 import de.keyboardsurfer.android.widget.crouton.Style;
 
 
-public class Connect extends Activity {
+public class Connect extends Activity implements HeartRateConnector.Listener {
 
     private static final UUID CSC_SERVICE_UUID = UUID.fromString("00001816-0000-1000-8000-00805f9b34fb");
     private static final UUID CSC_CHARACTERISTIC_UUID = UUID.fromString("00002a5b-0000-1000-8000-00805f9b34fb");
@@ -137,6 +135,7 @@ public class Connect extends Activity {
         }
     };
     private Crouton currentCrouton;
+    private HeartRateConnector heartRateConnector;
 
     private void showSpeed(final int speedInKilometersPerHour) {
         final String text = getString(R.string.speed, speedInKilometersPerHour);
@@ -202,6 +201,19 @@ public class Connect extends Activity {
         ButterKnife.inject(this);
 
         disconnectButton.setEnabled(false);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        this.heartRateConnector.disconnect();
+    }
+
+    @OnClick(R.id.connect_heartrate_button)
+    void connectToHeartRateSensor(){
+        heartRateConnector = new HeartRateConnector(bluetooth.getAdapter(), this);
+        heartRateConnector.setListener(this);
+        heartRateConnector.scanAndAutoConnect();
     }
 
     @OnClick(R.id.connect_button)
@@ -303,6 +315,43 @@ public class Connect extends Activity {
             @Override
             public void run() {
                 rssiTextView.setText(Connect.this.getString(R.string.rssi_format, rssi));
+            }
+        });
+    }
+
+    @InjectView(R.id.connect_heartrate_button)
+    Button connectHeartrateButton;
+    boolean heartRateConnected = false;
+    int heartRateRSSI = 0;
+    int heartRate = 0;
+
+    @Override
+    public void onRSSIUpdate(int rssi) {
+        heartRateRSSI = rssi;
+        updateHeartRateButton();
+    }
+
+    @Override
+    public void heartRateChanged(int heartRateMeasurementValue) {
+        heartRate = heartRateMeasurementValue;
+        updateHeartRateButton();
+    }
+
+    @Override
+    public void onHeartRateConnected(boolean b) {
+        heartRateConnected = b;
+        updateHeartRateButton();
+    }
+
+    private void updateHeartRateButton() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                StringBuilder builder = new StringBuilder();
+                builder.append(heartRateConnected ? "connected" : "disconnected");
+                builder.append(" heard rate: ").append(heartRate).append("bpm");
+                builder.append(" rssi:").append(heartRateRSSI);
+                connectHeartrateButton.setText(builder.toString());
             }
         });
     }
