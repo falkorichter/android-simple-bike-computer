@@ -9,4 +9,5 @@ build/
 local.properties
 proguard/
 gradle.properties
-SimpleBikeComputer.iml
+*.iml
+.idea
