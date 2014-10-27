@@ -1,1 +1,1 @@
-include ':app', ':bluetooth'
+include ':app', ':bluetooth', ':wearable'

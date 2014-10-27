@@ -21,7 +21,7 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
         }
 
         @Override
-        public void onHeartRateConnected(NotifyConnector connector, boolean b) {
+        public void onHeartRateConnected(NotifyConnector connector, boolean connected) {
 
         }
     };
@@ -38,14 +38,23 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
     public void disconnect() {
         if(connectedGatt != null) {
             connectedGatt.disconnect();
+            this.listener.onHeartRateConnected(this, false);
         }
+    }
+
+    public boolean isConnecting() {
+        return connectingToGatt;
+    }
+
+    public boolean isConnected() {
+        return connectedGatt != null;
     }
 
     public interface Listener {
 
         void onRSSIUpdate(NotifyConnector connector, int rssi);
 
-        void onHeartRateConnected(NotifyConnector connector, boolean b);
+        void onHeartRateConnected(NotifyConnector connector, boolean connected);
     }
 
     public void scanAndAutoConnect() {
@@ -86,10 +95,11 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
                 this.connectedGatt = gatt;
                 break;
             }
-            case BluetoothGatt.STATE_DISCONNECTED:
+            case BluetoothGatt.STATE_DISCONNECTED: {
                 listener.onHeartRateConnected(this, false);
                 this.connectedGatt = null;
                 break;
+            }
         }
     }
 

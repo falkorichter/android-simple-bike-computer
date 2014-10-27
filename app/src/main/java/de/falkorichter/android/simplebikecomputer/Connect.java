@@ -187,9 +187,6 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
     @InjectView(R.id.auto_connect_checkbox)
     CheckBox autoConnectCheckBox;
 
-    @InjectView(R.id.keep_awake_button)
-    Button keepAwakeButton;
-
     @InjectView(R.id.speed_TextView)
     TextView speedTextView;
 
@@ -212,6 +209,9 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
         ButterKnife.inject(this);
 
         disconnectButton.setEnabled(false);
+        heartRateConnector = new HeartRateConnector(bluetooth.getAdapter(), this);
+        heartRateConnector.setListener(this);
+
     }
 
     @Override
@@ -222,8 +222,6 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
 
     @OnClick(R.id.connect_heartrate_button)
     void connectToHeartRateSensor(){
-        heartRateConnector = new HeartRateConnector(bluetooth.getAdapter(), this);
-        heartRateConnector.setListener(this);
         heartRateConnector.scanAndAutoConnect();
     }
 
@@ -265,7 +263,7 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
     }
 
     @OnClick(R.id.keep_awake_button)
-    protected void keepAwakeButtonTapped(){
+    protected void keepAwakeButtonTapped(Button keepAwakeButton){
         if(this.wakeLock == null){
             final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
             this.wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "My Tag");
@@ -346,9 +344,9 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
     }
 
     @Override
-    public void onHeartRateConnected(NotifyConnector connector,boolean b) {
+    public void onHeartRateConnected(NotifyConnector connector,boolean connected) {
         if (connector == heartRateConnector) {
-            heartRateConnected = b;
+            heartRateConnected = connected;
             updateHeartRateButton();
         }
     }
