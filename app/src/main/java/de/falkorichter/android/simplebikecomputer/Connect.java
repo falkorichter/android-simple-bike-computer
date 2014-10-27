@@ -25,6 +25,7 @@ import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
 import de.falkorichter.android.bluetooth.HeartRateConnector;
+import de.falkorichter.android.bluetooth.NotifyConnector;
 import de.falkorichter.android.bluetooth.utils.BluetoothUtil;
 import de.keyboardsurfer.android.widget.crouton.Crouton;
 import de.keyboardsurfer.android.widget.crouton.Style;
@@ -38,6 +39,11 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
 
     private static final String TAG = Connect.class.getSimpleName();
     public static final int NOT_SET = Integer.MIN_VALUE;
+
+    boolean heartRateConnected = false;
+    int heartRateRSSI = 0;
+    int heartRate = 0;
+
 
     private BluetoothManager bluetooth;
     private BluetoothGattCallback bluetoothGattCallback = new BluetoothGattCallback() {
@@ -187,6 +193,10 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
     @InjectView(R.id.speed_TextView)
     TextView speedTextView;
 
+    @InjectView(R.id.connect_heartrate_button)
+    Button connectHeartrateButton;
+
+
     private boolean connectingToGatt;
 
     private final Object connectingToGattMonitor = new Object();
@@ -320,16 +330,13 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
         });
     }
 
-    @InjectView(R.id.connect_heartrate_button)
-    Button connectHeartrateButton;
-    boolean heartRateConnected = false;
-    int heartRateRSSI = 0;
-    int heartRate = 0;
 
     @Override
-    public void onRSSIUpdate(int rssi) {
-        heartRateRSSI = rssi;
-        updateHeartRateButton();
+    public void onRSSIUpdate(NotifyConnector connector, int rssi) {
+        if (connector == heartRateConnector) {
+            heartRateRSSI = rssi;
+            updateHeartRateButton();
+        }
     }
 
     @Override
@@ -339,9 +346,11 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
     }
 
     @Override
-    public void onHeartRateConnected(boolean b) {
-        heartRateConnected = b;
-        updateHeartRateButton();
+    public void onHeartRateConnected(NotifyConnector connector,boolean b) {
+        if (connector == heartRateConnector) {
+            heartRateConnected = b;
+            updateHeartRateButton();
+        }
     }
 
     private void updateHeartRateButton() {

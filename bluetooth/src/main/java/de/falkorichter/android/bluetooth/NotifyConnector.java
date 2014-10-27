@@ -14,13 +14,14 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
 
     private static final UUID BTLE_NOTIFICATION_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private static final Listener NONE = new Listener() {
+
         @Override
-        public void onRSSIUpdate(int rssi) {
+        public void onRSSIUpdate(NotifyConnector connector, int rssi) {
 
         }
 
         @Override
-        public void onHeartRateConnected(boolean b) {
+        public void onHeartRateConnected(NotifyConnector connector, boolean b) {
 
         }
     };
@@ -42,9 +43,9 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
 
     public interface Listener {
 
-        void onRSSIUpdate(int rssi);
+        void onRSSIUpdate(NotifyConnector connector, int rssi);
 
-        void onHeartRateConnected(boolean b);
+        void onHeartRateConnected(NotifyConnector connector, boolean b);
     }
 
     public void scanAndAutoConnect() {
@@ -54,7 +55,7 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
                 synchronized (connectingToGattMonitor) {
                     if (!connectingToGatt) {
                         connectingToGatt = true;
-                        listener.onRSSIUpdate(rssi);
+                        listener.onRSSIUpdate(NotifyConnector.this, rssi);
                         device.connectGatt(context, true, NotifyConnector.this);
                         bluetoothAdapter.stopLeScan(this);
                     }
@@ -81,12 +82,12 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
         switch (state) {
             case BluetoothGatt.STATE_CONNECTED: {
                 gatt.discoverServices();
-                listener.onHeartRateConnected(true);
+                listener.onHeartRateConnected(this, true);
                 this.connectedGatt = gatt;
                 break;
             }
             case BluetoothGatt.STATE_DISCONNECTED:
-                listener.onHeartRateConnected(false);
+                listener.onHeartRateConnected(this, false);
                 this.connectedGatt = null;
                 break;
         }
