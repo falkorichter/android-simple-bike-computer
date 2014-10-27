@@ -1,4 +1,4 @@
-package de.falkorichter.android.simplebikecomputer.utils;
+package de.falkorichter.android.simplebikecomputer.bluetooth;
 
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothProfile;

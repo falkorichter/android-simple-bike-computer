@@ -10,19 +10,12 @@ import android.content.Context;
 
 import java.util.UUID;
 
-public class HeartRateConnector extends BluetoothGattCallback {
+public abstract class NotifyConnector extends BluetoothGattCallback {
 
-    private static final UUID HR_SERVICE_UUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb");
-    private static final UUID HR_MEASUREMENT_CHARACTERISTIC_UUID = UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb");
     private static final UUID BTLE_NOTIFICATION_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     private static final Listener NONE = new Listener() {
         @Override
         public void onRSSIUpdate(int rssi) {
-
-        }
-
-        @Override
-        public void heartRateChanged(int heartRateMeasurementValue) {
 
         }
 
@@ -34,9 +27,12 @@ public class HeartRateConnector extends BluetoothGattCallback {
     private final Object connectingToGattMonitor = new Object();
     private final BluetoothAdapter bluetoothAdapter;
     private boolean connectingToGatt;
-    private Listener listener = NONE;
+    protected Listener listener = NONE;
     private final Context context;
     private BluetoothGatt connectedGatt;
+    private final UUID[] serviceUUIDs;
+    private final UUID characteristic;
+    private final UUID serviceUUID;
 
     public void disconnect() {
         if(connectedGatt != null) {
@@ -44,25 +40,22 @@ public class HeartRateConnector extends BluetoothGattCallback {
         }
     }
 
-    interface Listener {
+    public interface Listener {
 
         void onRSSIUpdate(int rssi);
-
-        void heartRateChanged(int heartRateMeasurementValue);
 
         void onHeartRateConnected(boolean b);
     }
 
     public void scanAndAutoConnect() {
-        UUID[] serviceUUIDs = new UUID[]{HR_SERVICE_UUID};
         bluetoothAdapter.startLeScan(serviceUUIDs, new BluetoothAdapter.LeScanCallback() {
             @Override
             public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
                 synchronized (connectingToGattMonitor) {
-                    if (/*device.getName().contains("BSCBLE V1.5") && */!connectingToGatt) {
+                    if (!connectingToGatt) {
                         connectingToGatt = true;
                         listener.onRSSIUpdate(rssi);
-                        device.connectGatt(context, true, HeartRateConnector.this);
+                        device.connectGatt(context, true, NotifyConnector.this);
                         bluetoothAdapter.stopLeScan(this);
                     }
                 }
@@ -70,14 +63,15 @@ public class HeartRateConnector extends BluetoothGattCallback {
         });
     }
 
-    public HeartRateConnector(BluetoothAdapter adapter, Context context) {
+    public NotifyConnector(BluetoothAdapter adapter, Context context, UUID[] serviceUUIDs, UUID characteristic, UUID serviceUUID) {
         this.bluetoothAdapter = adapter;
         this.context = context;
+        this.serviceUUIDs = serviceUUIDs;
+        this.characteristic = characteristic;
+        this.serviceUUID = serviceUUID;
     }
 
-    public void setListener(Listener connectorListener) {
-        listener = connectorListener;
-    }
+
 
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int state) {
@@ -99,10 +93,17 @@ public class HeartRateConnector extends BluetoothGattCallback {
     }
 
     @Override
+    public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+        super.onCharacteristicChanged(gatt, characteristic);
+        gatt.readRemoteRssi();
+    }
+
+
+        @Override
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
         super.onServicesDiscovered(gatt, status);
 
-        BluetoothGattCharacteristic valueCharacteristic = gatt.getService(HR_SERVICE_UUID).getCharacteristic(HR_MEASUREMENT_CHARACTERISTIC_UUID);
+        BluetoothGattCharacteristic valueCharacteristic = gatt.getService(serviceUUID).getCharacteristic(characteristic);
         boolean notificationSet = gatt.setCharacteristicNotification(valueCharacteristic, true);
 
         BluetoothGattDescriptor descriptor = valueCharacteristic.getDescriptor(BTLE_NOTIFICATION_DESCRIPTOR_UUID);
@@ -110,13 +111,5 @@ public class HeartRateConnector extends BluetoothGattCallback {
         boolean writeDescriptorSuccess = gatt.writeDescriptor(descriptor);
     }
 
-    @Override
-    public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-        super.onCharacteristicChanged(gatt, characteristic);
 
-        byte[] value = characteristic.getValue();
-        final int heartRateMeasurementValue         = (value[1] & 0xff);
-        this.listener.heartRateChanged(heartRateMeasurementValue);
-
-    }
 }

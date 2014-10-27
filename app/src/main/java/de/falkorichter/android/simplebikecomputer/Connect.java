@@ -24,12 +24,13 @@ import java.util.UUID;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
-import de.falkorichter.android.simplebikecomputer.utils.BluetoothUtil;
+import de.falkorichter.android.simplebikecomputer.bluetooth.BluetoothUtil;
+import de.falkorichter.android.simplebikecomputer.bluetooth.HeartRateConnector;
 import de.keyboardsurfer.android.widget.crouton.Crouton;
 import de.keyboardsurfer.android.widget.crouton.Style;
 
 
-public class Connect extends Activity implements HeartRateConnector.Listener {
+public class Connect extends Activity implements HeartRateConnector.HeartRateListener {
 
     private static final UUID CSC_SERVICE_UUID = UUID.fromString("00001816-0000-1000-8000-00805f9b34fb");
     private static final UUID CSC_CHARACTERISTIC_UUID = UUID.fromString("00002a5b-0000-1000-8000-00805f9b34fb");
