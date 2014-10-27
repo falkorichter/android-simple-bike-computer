@@ -24,8 +24,8 @@ import java.util.UUID;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
-import de.falkorichter.android.simplebikecomputer.bluetooth.BluetoothUtil;
-import de.falkorichter.android.simplebikecomputer.bluetooth.HeartRateConnector;
+import de.falkorichter.android.bluetooth.HeartRateConnector;
+import de.falkorichter.android.bluetooth.utils.BluetoothUtil;
 import de.keyboardsurfer.android.widget.crouton.Crouton;
 import de.keyboardsurfer.android.widget.crouton.Style;
 

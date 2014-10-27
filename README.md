@@ -1,7 +1,7 @@
 android-simple-bike-computer
 ============================
 
-[![Build Status](https://travis-ci.org/deadfalkon/android-simple-bike-computer.svg?branch=master)](https://travis-ci.org/deadfalkon/android-simple-bike-computer)
+[![Build Status](https://travis-ci.org/deadfalkon/android-simple-bike-computer.svg?branch=develop)](https://travis-ci.org/deadfalkon/android-simple-bike-computer)
 
 This is aimed to test the BTLE day-to-day usefulness.
 

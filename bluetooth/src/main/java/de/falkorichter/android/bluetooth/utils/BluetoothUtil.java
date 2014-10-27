@@ -1,11 +1,8 @@
-package de.falkorichter.android.simplebikecomputer.bluetooth;
+package de.falkorichter.android.bluetooth.utils;
 
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothProfile;
 
-/**
- * Created by falkorichter on 11/08/14.
- */
 public class BluetoothUtil {
 
     public static String connectionStateToString(int state) {

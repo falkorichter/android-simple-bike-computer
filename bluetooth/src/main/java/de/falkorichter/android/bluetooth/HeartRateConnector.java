@@ -1,13 +1,11 @@
-package de.falkorichter.android.simplebikecomputer.bluetooth;
+package de.falkorichter.android.bluetooth;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.content.Context;
 
 import java.util.UUID;
-
-import de.falkorichter.android.simplebikecomputer.Connect;
-import de.falkorichter.android.simplebikecomputer.NotifyConnector;
 
 public class HeartRateConnector extends NotifyConnector {
 
@@ -18,7 +16,7 @@ public class HeartRateConnector extends NotifyConnector {
         void heartRateChanged(int heartRateMeasurementValue);
     }
 
-    public HeartRateConnector(BluetoothAdapter adapter, Connect connect) {
+    public HeartRateConnector(BluetoothAdapter adapter, Context connect) {
         super(adapter, connect, new UUID[]{HR_SERVICE_UUID}, HR_MEASUREMENT_CHARACTERISTIC_UUID, HR_SERVICE_UUID);
     }
 

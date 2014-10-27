@@ -1,18 +1,17 @@
-package de.falkorichter.android.simplebikecomputer.bluetooth;
+package de.falkorichter.android.bluetooth;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.content.Context;
 import android.util.Log;
 
 import java.util.UUID;
 
-import de.falkorichter.android.simplebikecomputer.Connect;
-import de.falkorichter.android.simplebikecomputer.NotifyConnector;
 
 public class SpeedAndCadenceConnector extends NotifyConnector {
 
-    private static final String TAG = Connect.class.getSimpleName();
+    private static final String TAG = SpeedAndCadenceConnector.class.getSimpleName();
 
     private static final UUID CSC_SERVICE_UUID = UUID.fromString("00001816-0000-1000-8000-00805f9b34fb");
     private static final UUID CSC_CHARACTERISTIC_UUID = UUID.fromString("00002a5b-0000-1000-8000-00805f9b34fb");
@@ -27,7 +26,7 @@ public class SpeedAndCadenceConnector extends NotifyConnector {
         void speedChanged(double speedInKilometersPerHour);
     }
 
-    public SpeedAndCadenceConnector(BluetoothAdapter adapter, Connect connect) {
+    public SpeedAndCadenceConnector(BluetoothAdapter adapter, Context connect) {
         super(adapter, connect, new UUID[]{CSC_SERVICE_UUID}, CSC_CHARACTERISTIC_UUID, CSC_SERVICE_UUID);
     }
 
