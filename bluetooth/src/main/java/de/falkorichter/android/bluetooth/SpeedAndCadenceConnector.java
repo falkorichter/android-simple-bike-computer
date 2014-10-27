@@ -24,6 +24,8 @@ public class SpeedAndCadenceConnector extends NotifyConnector {
 
     public interface SpeedAndCadenceConnectorListener extends NotifyConnector.Listener{
         void speedChanged(double speedInKilometersPerHour);
+
+        void onTotalDistanceChanged(double totalDistanceInMeters);
     }
 
     public SpeedAndCadenceConnector(BluetoothAdapter adapter, Context connect) {
@@ -53,6 +55,8 @@ public class SpeedAndCadenceConnector extends NotifyConnector {
 
 
         long numberOfWheelRevolutions = cumulativeWheelRevolutions - lastWheelCount;
+
+        getSpeedAndCadenceConnectorListener().onTotalDistanceChanged(numberOfWheelRevolutions*wheelSize);
 
         if (lastWheelTime  != lastWheelEventTime && numberOfWheelRevolutions > 0){
             double timeDiff = lastWheelEventTime - lastWheelTime;
