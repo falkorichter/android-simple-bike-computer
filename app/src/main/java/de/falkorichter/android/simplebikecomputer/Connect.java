@@ -398,9 +398,9 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
     }
 
     @Override
-    public void onHeartRateConnected(NotifyConnector connector,boolean connected) {
+    public void onConnectionStateChanged(NotifyConnector connector, NotifyConnector.ConnectionState connectionState) {
         if (connector == heartRateConnector) {
-            heartRateConnected = connected;
+            heartRateConnected = connectionState == NotifyConnector.ConnectionState.connected;
             updateHeartRateButton();
         }
     }

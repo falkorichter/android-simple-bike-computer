@@ -2,10 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="de.falkorichter.android.simplebikecomputer">
 
-    <uses-sdk
-        android:minSdkVersion="20"
-        android:targetSdkVersion="20" />
-
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application

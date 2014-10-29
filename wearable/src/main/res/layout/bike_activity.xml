@@ -18,14 +18,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="2dp"
-                android:text="@string/main_activity_title_text"
-                android:textSize="36sp"
-                android:textColor="#006600"/>
-
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -36,15 +28,18 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/keep_awake_button"
                 android:text="keep awake" />
-
-
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:onClick="onFinishActivity"
                 android:id="@+id/heartRateButton"
                 android:textColor="@android:color/holo_red_dark"
                 android:text="connect heartbeat" />
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/speedAndCadenceButton"
+                android:textColor="@android:color/holo_red_dark"
+                android:text="connect bike" />
         </LinearLayout>
 
     </ScrollView>
