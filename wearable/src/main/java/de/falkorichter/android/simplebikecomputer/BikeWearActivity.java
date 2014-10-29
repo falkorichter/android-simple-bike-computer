@@ -24,11 +24,8 @@ import de.falkorichter.android.bluetooth.HeartRateConnector;
 import de.falkorichter.android.bluetooth.NotifyConnector;
 
 
-public class BikeWearActivity extends Activity
-        implements DelayedConfirmationView.DelayedConfirmationListener, HeartRateConnector.HeartRateListener {
+public class BikeWearActivity extends Activity implements  HeartRateConnector.HeartRateListener {
     private static final String TAG = BikeWearActivity.class.getSimpleName();
-
-    private static final int NUM_SECONDS = 5;
 
     private GestureDetectorCompat mGestureDetector;
 
@@ -88,32 +85,6 @@ public class BikeWearActivity extends Activity
         this.wakeLock.release();
         heartRateConnector.disconnect();
     }
-
-    /**
-     * Handles the button to start a DelayedConfirmationView timer.
-     */
-    @OnClick(R.id.start_timer_button)
-    public void onStartTimer(View view) {
-        DelayedConfirmationView delayedConfirmationView = (DelayedConfirmationView)
-                findViewById(R.id.timer);
-        delayedConfirmationView.setTotalTimeMs(NUM_SECONDS * 1000);
-        delayedConfirmationView.setListener(this);
-        delayedConfirmationView.start();
-        scroll(View.FOCUS_DOWN);
-    }
-
-    @Override
-    public void onTimerFinished(View v) {
-        Log.d(TAG, "onTimerFinished is called.");
-        scroll(View.FOCUS_UP);
-    }
-
-    @Override
-    public void onTimerSelected(View v) {
-        Log.d(TAG, "onTimerSelected is called.");
-        scroll(View.FOCUS_UP);
-    }
-
     private void scroll(final int scrollDirection) {
         final ScrollView scrollView = (ScrollView) findViewById(R.id.scroll);
         scrollView.post(new Runnable() {

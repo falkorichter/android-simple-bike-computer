@@ -70,6 +70,13 @@
         android:layout_below="@+id/disconnect_button"
         android:layout_alignParentStart="true"
         android:layout_alignEnd="@+id/disconnect_button" />
+    <Button
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Read Characteristics"
+        android:id="@+id/readCharacteristics"
+        android:layout_below="@+id/distance_label"
+        android:layout_alignParentStart="true"/>
 
     <Button
         android:layout_width="wrap_content"
@@ -79,6 +86,8 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentStart="true"
         android:layout_alignEnd="@+id/distance_label" />
+
+
 
     <TextView
         android:layout_width="fill_parent"

@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.os.Bundle;
@@ -24,8 +25,13 @@ import java.util.UUID;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
+import de.falkorichter.android.bluetooth.commandQueue.GattCommandQueue;
+import de.falkorichter.android.bluetooth.commandQueue.GattCommand;
+import de.falkorichter.android.bluetooth.commandQueue.GattCommandQueueCallback;
+import de.falkorichter.android.bluetooth.commandQueue.GattCommandServiceGroup;
 import de.falkorichter.android.bluetooth.HeartRateConnector;
 import de.falkorichter.android.bluetooth.NotifyConnector;
+import de.falkorichter.android.bluetooth.utils.BTUUID;
 import de.falkorichter.android.bluetooth.utils.BluetoothUtil;
 import de.keyboardsurfer.android.widget.crouton.Crouton;
 import de.keyboardsurfer.android.widget.crouton.Style;
@@ -253,6 +259,54 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
             }
         });
         connectButton.setEnabled(false);
+    }
+
+    @OnClick(R.id.readCharacteristics)
+    void readCharacteristicsTapped(){
+        final BluetoothAdapter adapter = bluetooth.getAdapter();
+        UUID[] serviceUUIDs = new UUID[]{CSC_SERVICE_UUID};
+
+        final GattCommandServiceGroup service = new GattCommandServiceGroup(BTUUID.Service.device_information);
+        service.addCharacteristicOperation(GattCommand.CommandOperation.OPERATION_READ, BTUUID.Characteristic.manufacturer_name_string);
+        service.addCharacteristicOperation(GattCommand.CommandOperation.OPERATION_READ, BTUUID.Characteristic.model_number_string);
+        service.addCharacteristicOperation(GattCommand.CommandOperation.OPERATION_READ, BTUUID.Characteristic.firmware_revision_string);
+        service.addCharacteristicOperation(GattCommand.CommandOperation.OPERATION_READ, BTUUID.Characteristic.hardware_revision_string);
+        service.addCharacteristicOperation(GattCommand.CommandOperation.OPERATION_READ, BTUUID.Characteristic.serial_number_string);
+
+        final GattCommandQueue queue = new GattCommandQueue();
+        queue.add(service);
+        queue.setGattCommandQueueCallback(new GattCommandQueueCallback() {
+            @Override
+            public void finishProcessingCommands(CALLBACKSTATE callbackstate) {
+                BluetoothGattService readService = connectedGatt.getService(BTUUID.Service.device_information);
+                String manufacturer_name_string = readService.getCharacteristic(BTUUID.Characteristic.manufacturer_name_string).getStringValue(0);
+                String model_number_string = readService.getCharacteristic(BTUUID.Characteristic.model_number_string).getStringValue(0);
+                String firmware_revision_string = readService.getCharacteristic(BTUUID.Characteristic.firmware_revision_string).getStringValue(0);
+                String hardware_revision_string = readService.getCharacteristic(BTUUID.Characteristic.hardware_revision_string).getStringValue(0);
+                String serial_number_string = readService.getCharacteristic(BTUUID.Characteristic.serial_number_string).getStringValue(0);
+                Log.d(TAG,
+                        "manufacturer_name_string:" + manufacturer_name_string +
+                                "model_number_string:" + model_number_string +
+                                "firmware_revision_string:" + firmware_revision_string +
+                                "hardware_revision_string:" + hardware_revision_string +
+                                "serial_number_string:" + serial_number_string
+                );
+            }
+        });
+        queue.executeWhenConnected();
+
+        adapter.startLeScan(serviceUUIDs, new BluetoothAdapter.LeScanCallback() {
+            @Override
+            public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
+                Log.d(TAG, "found device " + device.getAddress());
+                synchronized (connectingToGattMonitor){
+                        device.connectGatt(Connect.this, true, queue);
+                        adapter.stopLeScan(this);
+                    }
+                }
+        });
+
+
     }
 
     @OnClick(R.id.disconnect_button)

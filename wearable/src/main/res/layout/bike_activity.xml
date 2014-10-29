@@ -44,27 +44,7 @@
                 android:onClick="onFinishActivity"
                 android:id="@+id/heartRateButton"
                 android:textColor="@android:color/holo_red_dark"
-                android:text="heartbeat: " />
-
-            <Button
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/start_timer_button"
-                android:text="@string/start_timer" />
-
-            <android.support.wearable.view.DelayedConfirmationView
-                xmlns:app="http://schemas.android.com/apk/res-auto"
-                android:id="@+id/timer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_launcher"
-                app:circle_color="@color/blue"
-                app:circle_padding="@dimen/circle_padding"
-                app:circle_border_width="@dimen/circle_border_normal_width"
-                app:circle_border_color="@color/white"
-                app:circle_radius="@dimen/circle_radius"/>
-
+                android:text="connect heartbeat" />
         </LinearLayout>
 
     </ScrollView>
