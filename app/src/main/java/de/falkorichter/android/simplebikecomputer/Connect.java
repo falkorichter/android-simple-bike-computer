@@ -7,7 +7,6 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.os.Bundle;
@@ -20,17 +19,18 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
+import java.util.Map;
 import java.util.UUID;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
-import de.falkorichter.android.bluetooth.commandQueue.GattCommandQueue;
-import de.falkorichter.android.bluetooth.commandQueue.GattCommand;
-import de.falkorichter.android.bluetooth.commandQueue.GattCommandQueueCallback;
-import de.falkorichter.android.bluetooth.commandQueue.GattCommandServiceGroup;
 import de.falkorichter.android.bluetooth.HeartRateConnector;
 import de.falkorichter.android.bluetooth.NotifyConnector;
+import de.falkorichter.android.bluetooth.commandQueue.GattCommand;
+import de.falkorichter.android.bluetooth.commandQueue.GattCommandQueue;
+import de.falkorichter.android.bluetooth.commandQueue.GattCommandQueueCallback;
+import de.falkorichter.android.bluetooth.commandQueue.GattCommandServiceGroup;
 import de.falkorichter.android.bluetooth.utils.BTUUID;
 import de.falkorichter.android.bluetooth.utils.BluetoothUtil;
 import de.keyboardsurfer.android.widget.crouton.Crouton;
@@ -89,12 +89,12 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
             Log.d(TAG, "onServicesDiscovered status:" + BluetoothUtil.statusToString(status));
             BluetoothGattCharacteristic valueCharacteristic = gatt.getService(CSC_SERVICE_UUID).getCharacteristic(CSC_CHARACTERISTIC_UUID);
             boolean notificationSet = gatt.setCharacteristicNotification(valueCharacteristic, true);
-            Log.d(TAG, "registered for updates " + (notificationSet ? "successfully" : "unsuccessfully") );
+            Log.d(TAG, "registered for updates " + (notificationSet ? "successfully" : "unsuccessfully"));
 
             BluetoothGattDescriptor descriptor = valueCharacteristic.getDescriptor(BTLE_NOTIFICATION_DESCRIPTOR_UUID);
             descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
             boolean writeDescriptorSuccess = gatt.writeDescriptor(descriptor);
-            Log.d(TAG, "wrote Descriptor for updates " + (writeDescriptorSuccess ? "successfully" : "unsuccessfully") );
+            Log.d(TAG, "wrote Descriptor for updates " + (writeDescriptorSuccess ? "successfully" : "unsuccessfully"));
         }
 
         double lastWheelTime = NOT_SET;
@@ -106,32 +106,32 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
             super.onCharacteristicChanged(gatt, characteristic);
             byte[] value = characteristic.getValue();
 
-            final long cumulativeWheelRevolutions       = (value[1] & 0xff) | ((value[2] & 0xff) << 8) | ((value[3] & 0xff) << 16) | ((value[4] & 0xff) << 24);
-            final int lastWheelEventReadValue           = (value[5] & 0xff) | ((value[6] & 0xff) << 8);
-            final int cumulativeCrankRevolutions        = (value[7] & 0xff) | ((value[8] & 0xff) << 8);
-            final int lastCrankEventReadValue           = (value[9] & 0xff) | ((value[10] & 0xff) << 8);
+            final long cumulativeWheelRevolutions = (value[1] & 0xff) | ((value[2] & 0xff) << 8) | ((value[3] & 0xff) << 16) | ((value[4] & 0xff) << 24);
+            final int lastWheelEventReadValue = (value[5] & 0xff) | ((value[6] & 0xff) << 8);
+            final int cumulativeCrankRevolutions = (value[7] & 0xff) | ((value[8] & 0xff) << 8);
+            final int lastCrankEventReadValue = (value[9] & 0xff) | ((value[10] & 0xff) << 8);
 
             double lastWheelEventTime = lastWheelEventReadValue / 1024.0;
 
             Log.d(TAG, "onCharacteristicChanged " + cumulativeWheelRevolutions + ":" + lastWheelEventReadValue + ":" + cumulativeCrankRevolutions + ":" + lastCrankEventReadValue);
 
-            if (lastWheelTime == NOT_SET){
+            if (lastWheelTime == NOT_SET) {
                 lastWheelTime = lastWheelEventTime;
             }
-            if (lastWheelCount == NOT_SET){
+            if (lastWheelCount == NOT_SET) {
                 lastWheelCount = cumulativeWheelRevolutions;
             }
 
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    distanceLabel.setText( String.format( "Distance: %.2f", cumulativeWheelRevolutions * wheelSize));
+                    distanceLabel.setText(String.format("Distance: %.2f", cumulativeWheelRevolutions * wheelSize));
                 }
             });
 
             long numberOfWheelRevolutions = cumulativeWheelRevolutions - lastWheelCount;
 
-            if (lastWheelTime  != lastWheelEventTime && numberOfWheelRevolutions > 0){
+            if (lastWheelTime != lastWheelEventTime && numberOfWheelRevolutions > 0) {
                 double timeDiff = lastWheelEventTime - lastWheelTime;
 
                 double speedinMetersPerSeconds = (wheelSize * numberOfWheelRevolutions) / timeDiff;
@@ -149,6 +149,7 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
     };
     private Crouton currentCrouton;
     private HeartRateConnector heartRateConnector;
+    private GattListenerProxy proxy;
 
     private void showSpeed(final int speedInKilometersPerHour) {
         final String text = getString(R.string.speed, speedInKilometersPerHour);
@@ -164,7 +165,7 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if(currentCrouton != null){
+                if (currentCrouton != null) {
                     currentCrouton.cancel();
                 }
                 currentCrouton = Crouton.makeText(Connect.this, text, style);
@@ -218,6 +219,8 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
         heartRateConnector = new HeartRateConnector(bluetooth.getAdapter(), this);
         heartRateConnector.setListener(this);
 
+        proxy = new GattListenerProxy();
+        proxy.addListener(new GattListenerProxy.LogListener());
     }
 
     @Override
@@ -227,7 +230,7 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
     }
 
     @OnClick(R.id.connect_heartrate_button)
-    void connectToHeartRateSensor(){
+    void connectToHeartRateSensor() {
         heartRateConnector.scanAndAutoConnect();
     }
 
@@ -239,7 +242,7 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
             @Override
             public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
                 Log.d(TAG, "found device " + device.getAddress());
-                synchronized (connectingToGattMonitor){
+                synchronized (connectingToGattMonitor) {
                     if (/*device.getName().contains("BSCBLE V1.5") && */!connectingToGatt) {
                         connectingToGatt = true;
                         Log.d(TAG, "connecting to " + device.getAddress());
@@ -262,7 +265,7 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
     }
 
     @OnClick(R.id.readCharacteristics)
-    void readCharacteristicsTapped(){
+    void readCharacteristicsTapped() {
         final BluetoothAdapter adapter = bluetooth.getAdapter();
         UUID[] serviceUUIDs = new UUID[]{CSC_SERVICE_UUID};
 
@@ -277,34 +280,43 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
         queue.add(service);
         queue.setGattCommandQueueCallback(new GattCommandQueueCallback() {
             @Override
-            public void finishProcessingCommands(CALLBACKSTATE callbackstate) {
-                BluetoothGattService readService = connectedGatt.getService(BTUUID.Service.device_information);
-                String manufacturer_name_string = readService.getCharacteristic(BTUUID.Characteristic.manufacturer_name_string).getStringValue(0);
-                String model_number_string = readService.getCharacteristic(BTUUID.Characteristic.model_number_string).getStringValue(0);
-                String firmware_revision_string = readService.getCharacteristic(BTUUID.Characteristic.firmware_revision_string).getStringValue(0);
-                String hardware_revision_string = readService.getCharacteristic(BTUUID.Characteristic.hardware_revision_string).getStringValue(0);
-                String serial_number_string = readService.getCharacteristic(BTUUID.Characteristic.serial_number_string).getStringValue(0);
-                Log.d(TAG,
-                        "manufacturer_name_string:" + manufacturer_name_string +
-                                "model_number_string:" + model_number_string +
-                                "firmware_revision_string:" + firmware_revision_string +
-                                "hardware_revision_string:" + hardware_revision_string +
-                                "serial_number_string:" + serial_number_string
-                );
+            public void finishProcessingCommands(CALLBACKSTATE callbackstate, BluetoothGatt queueGatt) {
+                if (callbackstate == CALLBACKSTATE.FINISH_WITH_SUCCESS) {
+                    Map<UUID, byte[]> readService = queue.results.get(BTUUID.Service.device_information);
+                    String manufacturer_name_string = new String(readService.get(BTUUID.Characteristic.manufacturer_name_string));
+                    String model_number_string = new String(readService.get(BTUUID.Characteristic.model_number_string));
+                    String firmware_revision_string = new String(readService.get(BTUUID.Characteristic.firmware_revision_string));
+                    String hardware_revision_string = new String(readService.get(BTUUID.Characteristic.hardware_revision_string));
+                    String serial_number_string = new String(readService.get(BTUUID.Characteristic.serial_number_string));
+
+                    Log.d(TAG, "manufacturer_name_string:" + manufacturer_name_string);
+                    Log.d(TAG, "model_number_string:" + model_number_string);
+                    Log.d(TAG, "firmware_revision_string:" + firmware_revision_string);
+                    Log.d(TAG, "hardware_revision_string:" + hardware_revision_string);
+                    Log.d(TAG, "serial_number_string:" + serial_number_string);
+                }
+                proxy.removeListener(queue);
             }
         });
         queue.executeWhenConnected();
 
-        adapter.startLeScan(serviceUUIDs, new BluetoothAdapter.LeScanCallback() {
-            @Override
-            public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
-                Log.d(TAG, "found device " + device.getAddress());
-                synchronized (connectingToGattMonitor){
-                        device.connectGatt(Connect.this, true, queue);
-                        adapter.stopLeScan(this);
-                    }
-                }
-        });
+
+        proxy.addListener(queue);
+
+        BluetoothDevice device = adapter.getRemoteDevice("78:A5:04:4A:13:E8");
+
+        device.connectGatt(this, true, proxy);
+
+//        adapter.startLeScan(serviceUUIDs, new BluetoothAdapter.LeScanCallback() {
+//            @Override
+//            public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
+//                Log.d(TAG, "found device " + device.getAddress());
+//                synchronized (connectingToGattMonitor){
+//                        device.connectGatt(Connect.this, true, proxy );
+//                        adapter.stopLeScan(this);
+//                    }
+//                }
+//        });
 
 
     }
@@ -317,14 +329,14 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
     }
 
     @OnClick(R.id.keep_awake_button)
-    protected void keepAwakeButtonTapped(Button keepAwakeButton){
-        if(this.wakeLock == null){
+    protected void keepAwakeButtonTapped(Button keepAwakeButton) {
+        if (this.wakeLock == null) {
             final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
             this.wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "My Tag");
             this.wakeLock.acquire();
             keepAwakeButton.setText("Save Battery");
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        }else{
+        } else {
             this.wakeLock.release();
             this.wakeLock = null;
             keepAwakeButton.setText("Stay Awake");
@@ -363,7 +375,7 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
         });
     }
 
-    void updateConnectionStateDisplay(int status){
+    void updateConnectionStateDisplay(int status) {
         final String text = BluetoothUtil.connectionStateToString(status);
         runOnUiThread(new Runnable() {
             @Override
@@ -373,7 +385,7 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
         });
     }
 
-    void updateRssiDisplay(final int rssi){
+    void updateRssiDisplay(final int rssi) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {

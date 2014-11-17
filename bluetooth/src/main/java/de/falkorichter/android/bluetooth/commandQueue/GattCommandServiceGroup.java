@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.UUID;
 
 public class GattCommandServiceGroup {
-    private final UUID uuid;
+    public final UUID uuid;
     private final LinkedList<CharacteristicOperation> operations;
     private BluetoothGattService service;
 

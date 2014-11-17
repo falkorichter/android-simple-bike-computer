@@ -15,7 +15,7 @@ public class BTUUID {
     }
 
     public static class Service {
-        public static final UUID device_information = UUID.fromString("180A");
+        public static final UUID device_information = BTUUID.fromString("180A");
     }
 
 

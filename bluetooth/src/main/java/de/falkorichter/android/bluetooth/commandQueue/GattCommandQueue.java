@@ -4,15 +4,25 @@
 package de.falkorichter.android.bluetooth.commandQueue;
 
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.util.Log;
+import android.util.Pair;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-public class GattCommandQueue extends BluetoothGattCallback {
+import de.falkorichter.android.simplebikecomputer.GattListenerProxy;
+
+public class GattCommandQueue extends GattListenerProxy.PartialListener {
+
+    public Map<UUID, Map<UUID, byte[]>> results = new HashMap<UUID, Map<UUID, byte[]>>();
+
     private static final String TAG = GattCommandQueue.class.getName();
 
     private LinkedList<GattCommandServiceGroup> servicesToProcess;
@@ -44,12 +54,15 @@ public class GattCommandQueue extends BluetoothGattCallback {
     private void processServices() {
 
         this.currentService = servicesToProcess.poll();
+
+
         if (this.currentService == null) {
             if (this.gattCommandQueueCallback != null)
-                this.gattCommandQueueCallback.finishProcessingCommands(GattCommandQueueCallback.CALLBACKSTATE.FINISH_WITH_SUCCESS);
+                this.gattCommandQueueCallback.finishProcessingCommands(GattCommandQueueCallback.CALLBACKSTATE.FINISH_WITH_SUCCESS, null);
             this.cleanup();
             return;
         }
+        results.put(currentService.uuid, new HashMap<UUID, byte[]>());
 
         if (!this.currentService.resolveService(this.bluetoothGatt)) {
             cleanupWithError();
@@ -61,7 +74,7 @@ public class GattCommandQueue extends BluetoothGattCallback {
 
     private void cleanupWithError() {
         if (this.gattCommandQueueCallback != null)
-            this.gattCommandQueueCallback.finishProcessingCommands(GattCommandQueueCallback.CALLBACKSTATE.FINISH_WITH_ERROR);
+            this.gattCommandQueueCallback.finishProcessingCommands(GattCommandQueueCallback.CALLBACKSTATE.FINISH_WITH_ERROR, null);
         this.cleanup();
     }
 
@@ -75,7 +88,7 @@ public class GattCommandQueue extends BluetoothGattCallback {
 
         if (!operation.execute(this.currentService, bluetoothGatt)) {
             if (this.gattCommandQueueCallback != null)
-                this.gattCommandQueueCallback.finishProcessingCommands(GattCommandQueueCallback.CALLBACKSTATE.FINISH_WITH_SUCCESS);
+                this.gattCommandQueueCallback.finishProcessingCommands(GattCommandQueueCallback.CALLBACKSTATE.FINISH_WITH_SUCCESS, bluetoothGatt);
             this.cleanup();
             return;
         }
@@ -120,6 +133,7 @@ public class GattCommandQueue extends BluetoothGattCallback {
             cleanupWithError();
             return;
         }
+        results.get(currentService.uuid).put(characteristic.getUuid(), characteristic.getValue());
         this.processCharacteristics();
     }
 

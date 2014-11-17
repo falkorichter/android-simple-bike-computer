@@ -151,7 +151,7 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
                 if (state == ConnectionState.connectingConfirmed || state == ConnectionState.connecting) {
                     connectingToGatt = false;
                     gatt.discoverServices();
-                    setCurrentState(ConnectionState.connecting);
+                    setCurrentState(ConnectionState.connected);
                     this.connectedGatt = gatt;
                 } else {
                     Log.e(TAG, "onConnectionStateChange when the NotifiyConnector was in state "+ connectionStateString(state));
