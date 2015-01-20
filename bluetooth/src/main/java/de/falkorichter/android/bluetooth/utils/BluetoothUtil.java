@@ -1,8 +1,11 @@
 package de.falkorichter.android.bluetooth.utils;
 
+import android.annotation.TargetApi;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothProfile;
+import android.os.Build;
 
+@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class BluetoothUtil {
 
     public static String connectionStateToString(int state) {
@@ -21,7 +24,7 @@ public class BluetoothUtil {
     }
 
     public static String statusToString(int status) {
-        switch (status){
+        switch (status) {
             case BluetoothGatt.GATT_SUCCESS:
                 return "GATT_SUCCESS";
             case BluetoothGatt.GATT_READ_NOT_PERMITTED:
@@ -46,7 +49,7 @@ public class BluetoothUtil {
     }
 
     public static String gattToString(BluetoothGatt gatt) {
-        if (gatt == null){
+        if (gatt == null) {
             return "null";
         }
         return "gatt:" + gatt.getDevice().getName();

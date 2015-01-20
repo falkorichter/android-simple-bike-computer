@@ -28,9 +28,9 @@ import butterknife.OnClick;
 import de.falkorichter.android.bluetooth.HeartRateConnector;
 import de.falkorichter.android.bluetooth.NotifyConnector;
 import de.falkorichter.android.bluetooth.commandQueue.GattCommand;
-import de.falkorichter.android.bluetooth.commandQueue.GattCommandQueue;
 import de.falkorichter.android.bluetooth.commandQueue.GattCommandQueueCallback;
 import de.falkorichter.android.bluetooth.commandQueue.GattCommandServiceGroup;
+import de.falkorichter.android.bluetooth.commandQueue.NewGattCommandQueue;
 import de.falkorichter.android.bluetooth.utils.BTUUID;
 import de.falkorichter.android.bluetooth.utils.BluetoothUtil;
 import de.keyboardsurfer.android.widget.crouton.Crouton;
@@ -267,7 +267,6 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
     @OnClick(R.id.readCharacteristics)
     void readCharacteristicsTapped() {
         final BluetoothAdapter adapter = bluetooth.getAdapter();
-        UUID[] serviceUUIDs = new UUID[]{CSC_SERVICE_UUID};
 
         final GattCommandServiceGroup service = new GattCommandServiceGroup(BTUUID.Service.device_information);
         service.addCharacteristicOperation(GattCommand.CommandOperation.OPERATION_READ, BTUUID.Characteristic.manufacturer_name_string);
@@ -276,11 +275,11 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
         service.addCharacteristicOperation(GattCommand.CommandOperation.OPERATION_READ, BTUUID.Characteristic.hardware_revision_string);
         service.addCharacteristicOperation(GattCommand.CommandOperation.OPERATION_READ, BTUUID.Characteristic.serial_number_string);
 
-        final GattCommandQueue queue = new GattCommandQueue();
+        final NewGattCommandQueue queue = new NewGattCommandQueue();
         queue.add(service);
         queue.setGattCommandQueueCallback(new GattCommandQueueCallback() {
             @Override
-            public void finishProcessingCommands(CALLBACKSTATE callbackstate, BluetoothGatt queueGatt) {
+            public void finishProcessingCommands(NewGattCommandQueue queue, CALLBACKSTATE callbackstate, BluetoothGatt bluetoothGatt) {
                 if (callbackstate == CALLBACKSTATE.FINISH_WITH_SUCCESS) {
                     Map<UUID, byte[]> readService = queue.results.get(BTUUID.Service.device_information);
                     String manufacturer_name_string = new String(readService.get(BTUUID.Characteristic.manufacturer_name_string));
@@ -303,20 +302,20 @@ public class Connect extends Activity implements HeartRateConnector.HeartRateLis
 
         proxy.addListener(queue);
 
-        BluetoothDevice device = adapter.getRemoteDevice("78:A5:04:4A:13:E8");
+//        BluetoothDevice device = adapter.getRemoteDevice("78:A5:04:4A:13:E8");
 
-        device.connectGatt(this, true, proxy);
+//        device.connectGatt(this, true, proxy);
 
-//        adapter.startLeScan(serviceUUIDs, new BluetoothAdapter.LeScanCallback() {
-//            @Override
-//            public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
-//                Log.d(TAG, "found device " + device.getAddress());
-//                synchronized (connectingToGattMonitor){
-//                        device.connectGatt(Connect.this, true, proxy );
-//                        adapter.stopLeScan(this);
-//                    }
-//                }
-//        });
+        adapter.startLeScan(null, new BluetoothAdapter.LeScanCallback() {
+            @Override
+            public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
+                Log.d(TAG, "found device " + device.getAddress());
+                synchronized (connectingToGattMonitor){
+                        device.connectGatt(Connect.this, true, proxy );
+                        adapter.stopLeScan(this);
+                    }
+                }
+        });
 
 
     }

@@ -1,32 +1,26 @@
 package de.falkorichter.android.bluetooth;
 
+import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Context;
+import android.os.Build;
 import android.util.Log;
 
 import java.util.UUID;
 
-
+@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class SpeedAndCadenceConnector extends NotifyConnector {
-
-    private static final String TAG = SpeedAndCadenceConnector.class.getSimpleName();
-
-    private static final UUID CSC_SERVICE_UUID = UUID.fromString("00001816-0000-1000-8000-00805f9b34fb");
-    private static final UUID CSC_CHARACTERISTIC_UUID = UUID.fromString("00002a5b-0000-1000-8000-00805f9b34fb");
 
     public static final int NOT_SET = Integer.MIN_VALUE;
     double lastWheelTime = NOT_SET;
     long lastWheelCount = NOT_SET;
+    private static final String TAG = SpeedAndCadenceConnector.class.getSimpleName();
+    private static final UUID CSC_SERVICE_UUID = UUID.fromString("00001816-0000-1000-8000-00805f9b34fb");
+    private static final UUID CSC_CHARACTERISTIC_UUID = UUID.fromString("00002a5b-0000-1000-8000-00805f9b34fb");
     double wheelSize = 2.17;
 
-
-    public interface SpeedAndCadenceConnectorListener extends NotifyConnector.Listener{
-        void speedChanged(double speedInKilometersPerHour);
-
-        void onTotalDistanceChanged(double totalDistanceInMeters);
-    }
 
     public SpeedAndCadenceConnector(BluetoothAdapter adapter, Context connect) {
         super(adapter, connect, new UUID[]{CSC_SERVICE_UUID}, CSC_CHARACTERISTIC_UUID, CSC_SERVICE_UUID);
@@ -37,28 +31,28 @@ public class SpeedAndCadenceConnector extends NotifyConnector {
         super.onCharacteristicChanged(gatt, characteristic);
         byte[] value = characteristic.getValue();
 
-        final long cumulativeWheelRevolutions       = (value[1] & 0xff) | ((value[2] & 0xff) << 8) | ((value[3] & 0xff) << 16) | ((value[4] & 0xff) << 24);
-        final int lastWheelEventReadValue           = (value[5] & 0xff) | ((value[6] & 0xff) << 8);
-        final int cumulativeCrankRevolutions        = (value[7] & 0xff) | ((value[8] & 0xff) << 8);
-        final int lastCrankEventReadValue           = (value[9] & 0xff) | ((value[10] & 0xff) << 8);
+        final long cumulativeWheelRevolutions = (value[1] & 0xff) | ((value[2] & 0xff) << 8) | ((value[3] & 0xff) << 16) | ((value[4] & 0xff) << 24);
+        final int lastWheelEventReadValue = (value[5] & 0xff) | ((value[6] & 0xff) << 8);
+        final int cumulativeCrankRevolutions = (value[7] & 0xff) | ((value[8] & 0xff) << 8);
+        final int lastCrankEventReadValue = (value[9] & 0xff) | ((value[10] & 0xff) << 8);
 
         double lastWheelEventTime = lastWheelEventReadValue / 1024.0;
 
         Log.d(TAG, "onCharacteristicChanged " + cumulativeWheelRevolutions + ":" + lastWheelEventReadValue + ":" + cumulativeCrankRevolutions + ":" + lastCrankEventReadValue);
 
-        if (lastWheelTime == NOT_SET){
+        if (lastWheelTime == NOT_SET) {
             lastWheelTime = lastWheelEventTime;
         }
-        if (lastWheelCount == NOT_SET){
+        if (lastWheelCount == NOT_SET) {
             lastWheelCount = cumulativeWheelRevolutions;
         }
 
 
         long numberOfWheelRevolutions = cumulativeWheelRevolutions - lastWheelCount;
 
-        getSpeedAndCadenceConnectorListener().onTotalDistanceChanged(numberOfWheelRevolutions*wheelSize);
+        getSpeedAndCadenceConnectorListener().onTotalDistanceChanged(numberOfWheelRevolutions * wheelSize);
 
-        if (lastWheelTime  != lastWheelEventTime && numberOfWheelRevolutions > 0){
+        if (lastWheelTime != lastWheelEventTime && numberOfWheelRevolutions > 0) {
             double timeDiff = lastWheelEventTime - lastWheelTime;
 
             double speedinMetersPerSeconds = (wheelSize * numberOfWheelRevolutions) / timeDiff;
@@ -80,5 +74,11 @@ public class SpeedAndCadenceConnector extends NotifyConnector {
 
     public void setListener(SpeedAndCadenceConnectorListener connectorListener) {
         listener = connectorListener;
+    }
+
+    public interface SpeedAndCadenceConnectorListener extends NotifyConnector.Listener {
+        void speedChanged(double speedInKilometersPerHour);
+
+        void onTotalDistanceChanged(double totalDistanceInMeters);
     }
 }

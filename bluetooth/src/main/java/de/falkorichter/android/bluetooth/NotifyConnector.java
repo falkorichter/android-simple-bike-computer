@@ -1,19 +1,21 @@
 package de.falkorichter.android.bluetooth;
 
+import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-import android.bluetooth.BluetoothProfile;
 import android.content.Context;
+import android.os.Build;
 import android.util.Log;
 
 import java.util.UUID;
 
 import de.falkorichter.android.bluetooth.utils.BluetoothUtil;
 
+@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public abstract class NotifyConnector extends BluetoothGattCallback {
     private static final String TAG = NotifyConnector.class.getSimpleName();
 
@@ -30,25 +32,23 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
 
         }
     };
+    protected Listener listener = NONE;
     private final Object connectingToGattMonitor = new Object();
     private final BluetoothAdapter bluetoothAdapter;
-    private boolean connectingToGatt;
-    protected Listener listener = NONE;
     private final Context context;
-    private BluetoothGatt connectedGatt;
     private final UUID[] serviceUUIDs;
     private final UUID characteristic;
     private final UUID serviceUUID;
-
+    private boolean connectingToGatt;
+    private BluetoothGatt connectedGatt;
     private ConnectionState state = ConnectionState.disconnected;
 
-    public enum ConnectionState {
-        disconnected,
-        scanning,
-        connecting,
-        connected,
-        connectingConfirmed,
-        disconnecting
+    public NotifyConnector(BluetoothAdapter adapter, Context context, UUID[] serviceUUIDs, UUID characteristic, UUID serviceUUID) {
+        this.bluetoothAdapter = adapter;
+        this.context = context;
+        this.serviceUUIDs = serviceUUIDs;
+        this.characteristic = characteristic;
+        this.serviceUUID = serviceUUID;
     }
 
     public static String connectionStateString(ConnectionState state) {
@@ -87,13 +87,6 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
         return connectedGatt != null;
     }
 
-    public interface Listener {
-
-        void onRSSIUpdate(NotifyConnector connector, int rssi);
-
-        void onConnectionStateChanged(NotifyConnector connector, ConnectionState connectionState);
-    }
-
     public void scanAndAutoConnect() {
         if (state == ConnectionState.disconnected) {
             setCurrentState(ConnectionState.scanning);
@@ -121,15 +114,6 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
         listener.onConnectionStateChanged(NotifyConnector.this, state);
     }
 
-    public NotifyConnector(BluetoothAdapter adapter, Context context, UUID[] serviceUUIDs, UUID characteristic, UUID serviceUUID) {
-        this.bluetoothAdapter = adapter;
-        this.context = context;
-        this.serviceUUIDs = serviceUUIDs;
-        this.characteristic = characteristic;
-        this.serviceUUID = serviceUUID;
-    }
-
-
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
         super.onConnectionStateChange(gatt, status, newState);
@@ -141,7 +125,7 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
         switch (newState) {
             case BluetoothGatt.STATE_CONNECTING: {
                 if (state != ConnectionState.connecting) {
-                    Log.e(TAG, "onConnectionStateChange connectingConfirmed  when state was not connecting: "+ connectionStateString(state));
+                    Log.e(TAG, "onConnectionStateChange connectingConfirmed  when state was not connecting: " + connectionStateString(state));
                 }
                 setCurrentState(ConnectionState.connectingConfirmed);
 
@@ -154,7 +138,7 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
                     setCurrentState(ConnectionState.connected);
                     this.connectedGatt = gatt;
                 } else {
-                    Log.e(TAG, "onConnectionStateChange when the NotifiyConnector was in state "+ connectionStateString(state));
+                    Log.e(TAG, "onConnectionStateChange when the NotifiyConnector was in state " + connectionStateString(state));
                 }
                 break;
             }
@@ -175,7 +159,6 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
         gatt.readRemoteRssi();
     }
 
-
     @Override
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
         super.onServicesDiscovered(gatt, status);
@@ -186,6 +169,23 @@ public abstract class NotifyConnector extends BluetoothGattCallback {
         BluetoothGattDescriptor descriptor = valueCharacteristic.getDescriptor(BTLE_NOTIFICATION_DESCRIPTOR_UUID);
         descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
         boolean writeDescriptorSuccess = gatt.writeDescriptor(descriptor);
+    }
+
+    public enum ConnectionState {
+        disconnected,
+        scanning,
+        connecting,
+        connected,
+        connectingConfirmed,
+        disconnecting
+    }
+
+
+    public interface Listener {
+
+        void onRSSIUpdate(NotifyConnector connector, int rssi);
+
+        void onConnectionStateChanged(NotifyConnector connector, ConnectionState connectionState);
     }
 
 

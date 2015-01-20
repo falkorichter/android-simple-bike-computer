@@ -3,35 +3,37 @@
  */
 package de.falkorichter.android.bluetooth.commandQueue;
 
+import android.annotation.TargetApi;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.os.Build;
 import android.util.Log;
-import android.util.Pair;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import de.falkorichter.android.bluetooth.utils.BluetoothUtil;
 import de.falkorichter.android.simplebikecomputer.GattListenerProxy;
 
-public class GattCommandQueue extends GattListenerProxy.PartialListener {
+@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
+public class NewGattCommandQueue extends GattListenerProxy.PartialListener {
 
+    private static final String TAG = NewGattCommandQueue.class.getName();
     public Map<UUID, Map<UUID, byte[]>> results = new HashMap<UUID, Map<UUID, byte[]>>();
-
-    private static final String TAG = GattCommandQueue.class.getName();
-
     private LinkedList<GattCommandServiceGroup> servicesToProcess;
     private BluetoothGatt bluetoothGatt;
     private GattCommandQueueCallback gattCommandQueueCallback;
     private GattCommandServiceGroup currentService;
     private boolean startWhenConnected;
+    private GattCommandServiceGroup.CharacteristicOperation currentOperation;
+    private boolean servicesDiscovered;
+    private boolean processingServices;
 
-    public GattCommandQueue() {
+    public NewGattCommandQueue() {
         this.servicesToProcess = new LinkedList<GattCommandServiceGroup>();
     }
 
@@ -48,17 +50,23 @@ public class GattCommandQueue extends GattListenerProxy.PartialListener {
         this.bluetoothGatt = bluetoothGatt;
         this.gattCommandQueueCallback = gattCommandQueueCallback;
 
+        startProcessServices();
+    }
+
+    private void startProcessServices() {
+        if (processingServices) {
+            Log.w(TAG, "was already processing Services. Called twice. ");
+            return;
+        }
+        this.processingServices = true;
         processServices();
     }
 
     private void processServices() {
-
         this.currentService = servicesToProcess.poll();
 
-
         if (this.currentService == null) {
-            if (this.gattCommandQueueCallback != null)
-                this.gattCommandQueueCallback.finishProcessingCommands(GattCommandQueueCallback.CALLBACKSTATE.FINISH_WITH_SUCCESS, null);
+            this.gattCommandQueueCallback.finishProcessingCommands(this, GattCommandQueueCallback.CALLBACKSTATE.FINISH_WITH_SUCCESS, null);
             this.cleanup();
             return;
         }
@@ -72,32 +80,36 @@ public class GattCommandQueue extends GattListenerProxy.PartialListener {
         this.processCharacteristics();
     }
 
-    private void cleanupWithError() {
-        if (this.gattCommandQueueCallback != null)
-            this.gattCommandQueueCallback.finishProcessingCommands(GattCommandQueueCallback.CALLBACKSTATE.FINISH_WITH_ERROR, null);
-        this.cleanup();
-    }
 
     private void processCharacteristics() {
-
-        GattCommandServiceGroup.CharacteristicOperation operation = this.currentService.pollCharacteristicOperation();
-        if (operation == null) {
+        currentOperation = this.currentService.pollCharacteristicOperation();
+        if (currentOperation == null) {
+            processingServices = false;
             processServices();
             return;
         }
 
-        if (!operation.execute(this.currentService, bluetoothGatt)) {
-            if (this.gattCommandQueueCallback != null)
-                this.gattCommandQueueCallback.finishProcessingCommands(GattCommandQueueCallback.CALLBACKSTATE.FINISH_WITH_SUCCESS, bluetoothGatt);
-            this.cleanup();
-            return;
+        Log.d(TAG, "executing Characteristic : " + currentOperation.uuid.toString());
+        if (!currentOperation.execute(this.currentService, bluetoothGatt)) {
+            if (currentOperation.failOnError) {
+                this.gattCommandQueueCallback.finishProcessingCommands(this, GattCommandQueueCallback.CALLBACKSTATE.FINISH_WITH_ERROR, bluetoothGatt);
+                this.cleanup();
+                return;
+            } else {
+                processCharacteristics();
+            }
         }
-
     }
 
     private void cleanup() {
         this.bluetoothGatt = null;
         this.gattCommandQueueCallback = null;
+        this.processingServices = false;
+    }
+
+    private void cleanupWithError() {
+        this.gattCommandQueueCallback.finishProcessingCommands(this, GattCommandQueueCallback.CALLBACKSTATE.FINISH_WITH_ERROR, null);
+        this.cleanup();
     }
 
     public void setGattCommandQueueCallback(GattCommandQueueCallback gattCommandQueueCallback) {
@@ -113,7 +125,7 @@ public class GattCommandQueue extends GattListenerProxy.PartialListener {
             cleanupWithError();
             return;
         }
-        processServices();
+        processCharacteristics();
     }
 
     @Override
@@ -123,17 +135,20 @@ public class GattCommandQueue extends GattListenerProxy.PartialListener {
             cleanupWithError();
             return;
         }
-        processServices();
+        processCharacteristics();
     }
 
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         Log.d(TAG, "read Characteristic" + characteristic.getUuid().toString() + " with value " + Arrays.toString(characteristic.getValue()));
         if (status != BluetoothGatt.GATT_SUCCESS) {
-            cleanupWithError();
-            return;
+            if (currentOperation.failOnError) {
+                cleanupWithError();
+                return;
+            }
+        } else {
+            results.get(currentService.uuid).put(characteristic.getUuid(), characteristic.getValue());
         }
-        results.get(currentService.uuid).put(characteristic.getUuid(), characteristic.getValue());
         this.processCharacteristics();
     }
 
@@ -152,9 +167,19 @@ public class GattCommandQueue extends GattListenerProxy.PartialListener {
         super.onConnectionStateChange(gatt, status, newState);
         switch (newState) {
             case BluetoothGatt.STATE_CONNECTED: {
-                if(startWhenConnected) {
+                if (startWhenConnected) {
                     this.bluetoothGatt = gatt;
-                    gatt.discoverServices();
+                    if (!servicesDiscovered) {
+                        gatt.discoverServices();
+                    }
+                }
+                break;
+            }
+            case BluetoothGatt.STATE_DISCONNECTED:
+            case BluetoothGatt.STATE_DISCONNECTING: {
+                if (processingServices) {
+                    Log.e(TAG, "While reading Characteristics: " + BluetoothUtil.connectionStateToString(newState));
+                    cleanupWithError();
                 }
                 break;
             }
@@ -164,9 +189,12 @@ public class GattCommandQueue extends GattListenerProxy.PartialListener {
     @Override
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
         super.onServicesDiscovered(gatt, status);
-        if (startWhenConnected) {
-            processServices();
+
+        if (startWhenConnected && !servicesDiscovered) {
+            this.bluetoothGatt = gatt;
+            startProcessServices();
         }
+        servicesDiscovered = true;
     }
 
     public void add(GattCommandServiceGroup service) {
