@@ -16,7 +16,11 @@ import java.util.UUID
 import de.falkorichter.android.bluetooth.utils.BluetoothUtil
 
 TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-public abstract class NotifyConnector(private val bluetoothAdapter: BluetoothAdapter, private val context: Context, private val serviceUUIDs: Array<UUID>, private val characteristic: UUID, private val serviceUUID: UUID) : BluetoothGattCallback() {
+public abstract class NotifyConnector(private val bluetoothAdapter: BluetoothAdapter,
+                                      private val context: Context,
+                                      private val serviceUUIDs: Array<UUID>,
+                                      private val characteristic: UUID,
+                                      private val serviceUUID: UUID) : BluetoothGattCallback() {
     protected var listener: Listener = NONE
     private val connectingToGattMonitor = Object()
     private var connectingToGatt: Boolean = false

@@ -9,23 +9,25 @@ import android.os.Build
 import android.util.Log
 
 import java.util.UUID
+import java.util.ArrayList
 
 TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class SpeedAndCadenceConnector(adapter: BluetoothAdapter, connect: Context) : NotifyConnector(adapter, connect, array(SpeedAndCadenceConnector.CSC_SERVICE_UUID), SpeedAndCadenceConnector.CSC_CHARACTERISTIC_UUID, SpeedAndCadenceConnector.CSC_SERVICE_UUID) {
-    var lastWheelTime = NOT_SET.toDouble()
-    var lastWheelCount = NOT_SET.toLong()
+    var lastWheelTime = NOT_SET
+    var lastWheelCount = NOT_SET
     var wheelSize = 2.17
 
     override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
         super.onCharacteristicChanged(gatt, characteristic)
-        val value = characteristic.getValue()
+        val valueBytes = characteristic.getValue()
+        var value : Array<Int> = Array( size = valueBytes.size(), init = {i -> valueBytes.get(i).toInt()})
 
         val cumulativeWheelRevolutions = (value[1] and 255) or ((value[2] and 255) shl 8) or ((value[3] and 255) shl 16) or ((value[4] and 255) shl 24).toLong()
         val lastWheelEventReadValue = (value[5] and 255) or ((value[6] and 255) shl 8)
         val cumulativeCrankRevolutions = (value[7] and 255) or ((value[8] and 255) shl 8)
         val lastCrankEventReadValue = (value[9] and 255) or ((value[10] and 255) shl 8)
 
-        val lastWheelEventTime = lastWheelEventReadValue.toDouble() / 1024.0
+        val lastWheelEventTime = lastWheelEventReadValue / 1024.0
 
         Log.d(TAG, "onCharacteristicChanged " + cumulativeWheelRevolutions + ":" + lastWheelEventReadValue + ":" + cumulativeCrankRevolutions + ":" + lastCrankEventReadValue)
 
